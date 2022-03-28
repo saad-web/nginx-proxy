@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: merchantpmtservice-svc
+  namespace: cmpaksa-app
+  labels:
+    app: merchantpmtservice-svc
+spec:
+  selector:
+    app: merchantpmtservice
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kubernetes.io/change-cause: "MerchantPMTService Deployment"
+  name: merchantpmtservice-deployment
+#  namespace: cmpaksa-app
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  minReadySeconds: 5
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: merchantpmtservice
+  template:
+    metadata:
+      labels:
+        app: merchantpmtservice
+    spec:
+      containers:
+      - name: merchantpmtservice
+        image: saad125/mpt
+        #image: devregistry.aksa.com:5043/cmpaksa/merchantpmtservice:tcps1.8
+        #image: devregistry.aksa.com:5043/cmpaksa/merchantpmtservice:tcpsv.1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        #envFrom:
+        #- configMapRef:
+        #    name: merchantpmtservice-configmap
+        volumeMounts:
+        - name: tz-config
+          mountPath: /etc/localtime
+      volumes:
+        - name: tz-config
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Karachi
+      hostAliases:
+        - ip: "10.0.0.3"
+          hostnames:
+          - "ewp.aksa.com.pk"
+        - ip: "172.16.1.223"
+          hostnames:
+          - "nadalt.aksa.com.pk"
+#        - ip: "10.202.1.11"
+#          hostnames:
+#          - "akzgelking.zong.com.pk"
+#        - ip: "172.26.56.48"
+#          hostnames:
+#          - "bosser.zong.com.pk"
+#        - ip: "172.26.56.51"
+#          hostnames:
+#          - "img.paymax.com.pk"
+     # imagePullSecrets:
+     #   - name: myregkey
